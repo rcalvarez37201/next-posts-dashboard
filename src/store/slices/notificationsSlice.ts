@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface NotificationState {
+  id: string;
   message: string;
   severity: "success" | "error" | "warning" | "info";
   open: boolean;
@@ -30,6 +31,9 @@ const notificationsSlice = createSlice({
       action: PayloadAction<ShowNotificationPayload>
     ) => {
       const newNotification: NotificationState = {
+        id: `notification-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`,
         message: action.payload.message,
         severity: action.payload.severity,
         open: true,
@@ -37,13 +41,34 @@ const notificationsSlice = createSlice({
       };
       state.notifications.push(newNotification);
     },
-    hideNotification: (state) => {
-      if (state.notifications.length > 0) {
-        state.notifications[0].open = false;
+    hideNotification: (state, action: PayloadAction<string | undefined>) => {
+      const notificationId = action.payload;
+      if (notificationId) {
+        // Hide specific notification
+        const notification = state.notifications.find(
+          (n) => n.id === notificationId
+        );
+        if (notification) {
+          notification.open = false;
+        }
+      } else {
+        // Hide first notification (backward compatibility)
+        if (state.notifications.length > 0) {
+          state.notifications[0].open = false;
+        }
       }
     },
-    removeNotification: (state) => {
-      state.notifications.shift();
+    removeNotification: (state, action: PayloadAction<string | undefined>) => {
+      const notificationId = action.payload;
+      if (notificationId) {
+        // Remove specific notification
+        state.notifications = state.notifications.filter(
+          (n) => n.id !== notificationId
+        );
+      } else {
+        // Remove first notification (backward compatibility)
+        state.notifications.shift();
+      }
     },
     clearAllNotifications: (state) => {
       state.notifications = [];

@@ -9,6 +9,7 @@ interface PostsState {
   posts: Post[];
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  deleteStatus: "idle" | "loading" | "succeeded" | "failed";
 }
 
 /**
@@ -18,6 +19,7 @@ const initialState: PostsState = {
   posts: [],
   status: "idle",
   error: null,
+  deleteStatus: "idle",
 };
 
 /**
@@ -71,6 +73,46 @@ export const fetchPostsByUser = createAsyncThunk(
 );
 
 /**
+ * An async thunk for deleting a post that shows notifications.
+ */
+export const deletePost = createAsyncThunk(
+  "posts/deletePost",
+  async (post: Post, { dispatch, rejectWithValue }) => {
+    try {
+      console.log(`🗑️ Deleting post ID: ${post.id}`);
+      await api.delete(`/posts/${post.id}`);
+
+      // Import here to avoid circular dependency
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: `Post #${post.id}: "${post.title}" has been deleted successfully.`,
+          severity: "success",
+          autoHideDuration: 3000,
+        })
+      );
+
+      return post.id;
+    } catch (error) {
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: "Error deleting post. Please try again.",
+          severity: "error",
+          autoHideDuration: 5000,
+        })
+      );
+
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+/**
  * The Redux slice for managing posts state.
  * It includes reducers for handling the different states of the `fetchPosts` async thunk.
  */
@@ -106,6 +148,19 @@ const postsSlice = createSlice({
       .addCase(fetchPostsByUser.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Something went wrong";
+      })
+      .addCase(deletePost.pending, (state) => {
+        state.deleteStatus = "loading";
+      })
+      .addCase(deletePost.fulfilled, (state, action: PayloadAction<number>) => {
+        state.deleteStatus = "succeeded";
+        // Remove the deleted post from the current posts array
+        state.posts = state.posts.filter((post) => post.id !== action.payload);
+      })
+      .addCase(deletePost.rejected, (state, action) => {
+        state.deleteStatus = "failed";
+        state.error =
+          action.error.message || "Something went wrong deleting the post";
       });
   },
 });

@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchPostsByUser } from "@/store/slices/postsSlice";
+import { deletePost, fetchPostsByUser } from "@/store/slices/postsSlice";
 import { Post } from "@/types";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -18,7 +18,8 @@ import {
   GridColDef,
   GridRowParams,
 } from "@mui/x-data-grid";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import DeleteConfirmDialog from "./DeleteConfirmDialog";
 
 interface PostsDataGridProps {
   onEdit?: (post: Post) => void;
@@ -32,9 +33,14 @@ interface PostsDataGridProps {
  */
 const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
   const dispatch = useAppDispatch();
-  const { posts, status, error } = useAppSelector((state) => state.posts);
+  const { posts, status, error, deleteStatus } = useAppSelector(
+    (state) => state.posts
+  );
   const { activeUser } = useAppSelector((state) => state.auth);
   const lastFetchedUserIdRef = useRef<number | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<Post | null>(
+    null
+  );
 
   useEffect(() => {
     if (activeUser && activeUser.id !== lastFetchedUserIdRef.current) {
@@ -242,7 +248,9 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
                 </Tooltip>
               }
               label="Delete"
-              onClick={() => onDelete(post)}
+              onClick={() => {
+                setDeleteConfirmation(post);
+              }}
             />
           );
         }
@@ -363,6 +371,19 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
           ),
         }}
       />
+
+      {deleteConfirmation && (
+        <DeleteConfirmDialog
+          open={!!deleteConfirmation}
+          post={deleteConfirmation}
+          loading={deleteStatus === "loading"}
+          onConfirm={(post) => {
+            dispatch(deletePost(post));
+            setDeleteConfirmation(null);
+          }}
+          onClose={() => setDeleteConfirmation(null)}
+        />
+      )}
     </Paper>
   );
 };
