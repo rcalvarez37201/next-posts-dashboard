@@ -10,6 +10,7 @@ interface PostsState {
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   deleteStatus: "idle" | "loading" | "succeeded" | "failed";
+  submitStatus: "idle" | "loading" | "succeeded" | "failed";
 }
 
 /**
@@ -20,6 +21,7 @@ const initialState: PostsState = {
   status: "idle",
   error: null,
   deleteStatus: "idle",
+  submitStatus: "idle",
 };
 
 /**
@@ -159,6 +161,105 @@ export const deleteMultiplePosts = createAsyncThunk(
 );
 
 /**
+ * Interface for creating a new post
+ */
+interface CreatePostData {
+  title: string;
+  body: string;
+  userId: number;
+}
+
+/**
+ * Interface for updating an existing post
+ */
+interface UpdatePostData {
+  id: number;
+  title: string;
+  body: string;
+  userId: number;
+}
+
+/**
+ * An async thunk for creating a new post.
+ */
+export const createPost = createAsyncThunk(
+  "posts/createPost",
+  async (postData: CreatePostData, { dispatch, rejectWithValue }) => {
+    try {
+      console.log(`➕ Creating new post:`, postData);
+      const response = await api.post<Post>("/posts", postData);
+
+      // Import here to avoid circular dependency
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: `Post "${postData.title}" has been created successfully.`,
+          severity: "success",
+          autoHideDuration: 3000,
+        })
+      );
+
+      return response.data;
+    } catch (error) {
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: "Error creating post. Please try again.",
+          severity: "error",
+          autoHideDuration: 5000,
+        })
+      );
+
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+/**
+ * An async thunk for updating an existing post.
+ */
+export const updatePost = createAsyncThunk(
+  "posts/updatePost",
+  async (postData: UpdatePostData, { dispatch, rejectWithValue }) => {
+    try {
+      console.log(`✏️ Updating post ID: ${postData.id}`, postData);
+      const response = await api.put<Post>(`/posts/${postData.id}`, postData);
+
+      // Import here to avoid circular dependency
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: `Post "${postData.title}" has been updated successfully.`,
+          severity: "success",
+          autoHideDuration: 3000,
+        })
+      );
+
+      return response.data;
+    } catch (error) {
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: "Error updating post. Please try again.",
+          severity: "error",
+          autoHideDuration: 5000,
+        })
+      );
+
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+/**
  * The Redux slice for managing posts state.
  * It includes reducers for handling the different states of the `fetchPosts` async thunk.
  */
@@ -225,6 +326,37 @@ const postsSlice = createSlice({
         state.deleteStatus = "failed";
         state.error =
           action.error.message || "Something went wrong deleting the posts";
+      })
+      .addCase(createPost.pending, (state) => {
+        state.submitStatus = "loading";
+      })
+      .addCase(createPost.fulfilled, (state, action: PayloadAction<Post>) => {
+        state.submitStatus = "succeeded";
+        // Add the new post to the beginning of the posts array
+        state.posts = [action.payload, ...state.posts];
+      })
+      .addCase(createPost.rejected, (state, action) => {
+        state.submitStatus = "failed";
+        state.error =
+          action.error.message || "Something went wrong creating the post";
+      })
+      .addCase(updatePost.pending, (state) => {
+        state.submitStatus = "loading";
+      })
+      .addCase(updatePost.fulfilled, (state, action: PayloadAction<Post>) => {
+        state.submitStatus = "succeeded";
+        // Update the post in the posts array
+        const index = state.posts.findIndex(
+          (post) => post.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.posts[index] = action.payload;
+        }
+      })
+      .addCase(updatePost.rejected, (state, action) => {
+        state.submitStatus = "failed";
+        state.error =
+          action.error.message || "Something went wrong updating the post";
       });
   },
 });

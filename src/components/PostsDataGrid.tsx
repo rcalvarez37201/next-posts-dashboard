@@ -31,20 +31,35 @@ import PostsDataGridToolbar from "./PostsDataGridToolbar";
 interface PostsDataGridProps {
   onEdit?: (post: Post) => void;
   onView?: (post: Post) => void;
-  onDelete?: (post: Post) => void;
 }
 
 /**
  * PostsDataGrid component displays posts in a Material-UI DataGrid with enhanced features.
  * Includes single and bulk delete functionality with confirmation dialogs.
  */
-const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
+const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   const dispatch = useAppDispatch();
   const { posts, status, error, deleteStatus } = useAppSelector(
     (state) => state.posts
   );
   const { activeUser } = useAppSelector((state) => state.auth);
   const lastFetchedUserIdRef = useRef<number | null>(null);
+
+  // Helper function to create safe HTML for rendering (removes dangerous tags)
+  const createSafeHTML = (htmlContent: string): string => {
+    // Remove script tags and other dangerous elements
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = htmlContent;
+
+    // Remove dangerous elements
+    const scriptsAndForms = tempDiv.querySelectorAll(
+      "script, form, iframe, object, embed"
+    );
+    scriptsAndForms.forEach((el) => el.remove());
+
+    return tempDiv.innerHTML;
+  };
+
   const [deleteConfirmation, setDeleteConfirmation] = useState<Post | null>(
     null
   );
@@ -181,56 +196,103 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
       headerName: "Content",
       flex: 2,
       minWidth: 300,
-      renderCell: (params) => (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            height: "100%",
-            py: 1,
-          }}
-        >
-          <Tooltip
-            title={params.value}
-            arrow
-            placement="top-start"
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  maxWidth: 400,
-                  fontSize: "0.875rem",
-                  lineHeight: 1.4,
-                  backgroundColor: "grey.900",
-                  "& .MuiTooltip-arrow": {
-                    color: "grey.900",
-                  },
-                },
-              },
+      renderCell: (params) => {
+        const htmlContent = params.value || "";
+        const safeHTML = createSafeHTML(htmlContent);
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              height: "100%",
+              py: 1,
+              width: "100%",
             }}
           >
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                whiteSpace: "normal",
-                lineHeight: 1.2,
-                wordBreak: "break-word",
-                cursor: "pointer",
-                "&:hover": {
-                  color: "primary.main",
+            <Tooltip
+              title={
+                <Box
+                  sx={{
+                    maxWidth: 400,
+                    "& p": { margin: 0.5 },
+                    "& ul, & ol": { margin: 0.5, paddingLeft: 2 },
+                    "& li": { margin: 0.25 },
+                    "& blockquote": {
+                      borderLeft: "3px solid #ccc",
+                      paddingLeft: 1,
+                      margin: 0.5,
+                      fontStyle: "italic",
+                    },
+                    "& code": {
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                      padding: "2px 4px",
+                      borderRadius: 1,
+                    },
+                    "& strong": { fontWeight: 600 },
+                    "& em": { fontStyle: "italic" },
+                  }}
+                  dangerouslySetInnerHTML={{ __html: safeHTML }}
+                />
+              }
+              arrow
+              placement="top-start"
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    maxWidth: 450,
+                    fontSize: "0.875rem",
+                    lineHeight: 1.4,
+                    backgroundColor: "grey.900",
+                    "& .MuiTooltip-arrow": {
+                      color: "grey.900",
+                    },
+                  },
                 },
               }}
             >
-              {params.value}
-            </Typography>
-          </Tooltip>
-        </Box>
-      ),
+              <Box
+                sx={{
+                  overflow: "hidden",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  whiteSpace: "normal",
+                  lineHeight: 1.3,
+                  wordBreak: "break-word",
+                  cursor: "pointer",
+                  width: "100%",
+                  fontSize: "0.875rem",
+                  color: "text.secondary",
+                  "& p": { margin: 0 },
+                  "& ul, & ol": { margin: "4px 0", paddingLeft: 2 },
+                  "& li": { margin: "2px 0" },
+                  "& blockquote": {
+                    borderLeft: "3px solid",
+                    borderColor: "primary.main",
+                    paddingLeft: 1,
+                    margin: "4px 0",
+                    fontStyle: "italic",
+                    opacity: 0.8,
+                  },
+                  "& code": {
+                    backgroundColor: "action.hover",
+                    padding: "1px 3px",
+                    borderRadius: 0.5,
+                    fontSize: "0.8em",
+                  },
+                  "& strong": { fontWeight: 600, color: "text.primary" },
+                  "& em": { fontStyle: "italic" },
+                  "&:hover": {
+                    color: "primary.main",
+                  },
+                }}
+                dangerouslySetInnerHTML={{ __html: safeHTML }}
+              />
+            </Tooltip>
+          </Box>
+        );
+      },
     },
     {
       field: "actions",
@@ -285,29 +347,28 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
           );
         }
 
-        if (onDelete) {
-          actions.push(
-            <GridActionsCellItem
-              key="delete"
-              icon={
-                <Tooltip title="Delete post">
-                  <DeleteIcon
-                    sx={{
-                      color: "error.main",
-                      "&:hover": {
-                        color: "error.dark",
-                      },
-                    }}
-                  />
-                </Tooltip>
-              }
-              label="Delete"
-              onClick={() => {
-                setDeleteConfirmation(post);
-              }}
-            />
-          );
-        }
+        // Always show delete button - uses internal delete functionality
+        actions.push(
+          <GridActionsCellItem
+            key="delete"
+            icon={
+              <Tooltip title="Delete post">
+                <DeleteIcon
+                  sx={{
+                    color: "error.main",
+                    "&:hover": {
+                      color: "error.dark",
+                    },
+                  }}
+                />
+              </Tooltip>
+            }
+            label="Delete"
+            onClick={() => {
+              setDeleteConfirmation(post);
+            }}
+          />
+        );
 
         return actions;
       },
