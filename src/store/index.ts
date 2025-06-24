@@ -1,5 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./slices/authSlice";
 import postsReducer from "./slices/postsSlice";
+import themeReducer from "./slices/themeSlice";
 
 /**
  * The main Redux store for the application.
@@ -8,6 +10,8 @@ import postsReducer from "./slices/postsSlice";
 export const store = configureStore({
   reducer: {
     posts: postsReducer,
+    auth: authReducer,
+    theme: themeReducer,
   },
 });
 

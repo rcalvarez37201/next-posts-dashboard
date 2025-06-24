@@ -1,5 +1,7 @@
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Box,
   Checkbox,
@@ -24,7 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchPosts } from "@/store/slices/postsSlice";
-import { Post } from "@/types";
+import { AppView, Post } from "@/types";
 
 type Order = "asc" | "desc";
 
@@ -98,6 +100,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
             </TableSortLabel>
           </TableCell>
         ))}
+        <TableCell>Actions</TableCell>
       </TableRow>
     </TableHead>
   );
@@ -166,7 +169,7 @@ function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   return 0;
 }
 
-function getComparator<Key extends keyof any>(
+function getComparator<Key extends keyof Post>(
   order: Order,
   orderBy: Key
 ): (
@@ -191,13 +194,25 @@ function stableSort<T>(
   return stabilizedThis.map((el) => el[0]);
 }
 
+interface PostsListProps {
+  onViewChange?: (view: AppView, postId?: number) => void;
+  onEdit?: (post: Post) => void;
+  onView?: (post: Post) => void;
+}
+
 /**
  * A component that fetches and displays a list of posts using a Material-UI Table
  * with sorting, selecting, and pagination capabilities.
+ * Follows the SPA navigation pattern using callback props for view changes.
  */
-export default function PostsList() {
+export default function PostsList({
+  onViewChange,
+  onEdit,
+  onView,
+}: PostsListProps) {
   const dispatch = useAppDispatch();
   const { posts, status, error } = useAppSelector((state) => state.posts);
+  const { activeUser } = useAppSelector((state) => state.auth);
 
   const [order, setOrder] = useState<Order>("asc");
   const [orderBy, setOrderBy] = useState<keyof Post>("id");
@@ -211,6 +226,12 @@ export default function PostsList() {
     }
   }, [status, dispatch]);
 
+  // Filter posts by active user
+  const filteredPosts = useMemo(() => {
+    if (!activeUser) return posts;
+    return posts.filter((post: Post) => post.userId === activeUser.id);
+  }, [posts, activeUser]);
+
   const handleRequestSort = (
     _: React.MouseEvent<unknown>,
     property: keyof Post
@@ -222,7 +243,7 @@ export default function PostsList() {
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelected = posts.map((n) => n.id);
+      const newSelected = filteredPosts.map((post: Post) => post.id);
       setSelected(newSelected);
       return;
     }
@@ -259,19 +280,35 @@ export default function PostsList() {
     setPage(0);
   };
 
+  const handleViewPost = (post: Post) => {
+    if (onView) {
+      onView(post);
+    } else {
+      onViewChange?.("details", post.id);
+    }
+  };
+
+  const handleEditPost = (post: Post) => {
+    if (onEdit) {
+      onEdit(post);
+    } else {
+      onViewChange?.("form", post.id);
+    }
+  };
+
   const isSelected = (id: number) => selected.indexOf(id) !== -1;
 
   const visibleRows = useMemo(
     () =>
-      stableSort(posts, getComparator(order, orderBy)).slice(
+      stableSort(filteredPosts, getComparator(order, orderBy)).slice(
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage
       ),
-    [posts, order, orderBy, page, rowsPerPage]
+    [filteredPosts, order, orderBy, page, rowsPerPage]
   );
 
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - posts.length) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - filteredPosts.length) : 0;
 
   if (status === "loading") {
     return (
@@ -299,6 +336,22 @@ export default function PostsList() {
     );
   }
 
+  // Show message when no user is selected
+  if (!activeUser) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="40vh"
+      >
+        <Typography variant="h6" color="text.secondary">
+          Please select a user to view their posts
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Paper sx={{ width: "100%", mb: 2 }}>
@@ -311,7 +364,7 @@ export default function PostsList() {
               orderBy={orderBy}
               onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
-              rowCount={posts.length}
+              rowCount={filteredPosts.length}
             />
             <TableBody>
               {visibleRows.map((row, index) => {
@@ -341,6 +394,30 @@ export default function PostsList() {
                     </TableCell>
                     <TableCell>{row.title}</TableCell>
                     <TableCell>{row.body}</TableCell>
+                    <TableCell>
+                      <Tooltip title="View post">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewPost(row);
+                          }}
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit post">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditPost(row);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -355,7 +432,7 @@ export default function PostsList() {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={posts.length}
+          count={filteredPosts.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
