@@ -30,6 +30,18 @@ export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
 });
 
 /**
+ * An async thunk to fetch posts for a specific user from the JSONPlaceholder API.
+ * This handles the asynchronous logic of the API request using the user-specific endpoint.
+ */
+export const fetchPostsByUser = createAsyncThunk(
+  "posts/fetchPostsByUser",
+  async (userId: number) => {
+    const response = await api.get<Post[]>(`/users/${userId}/posts`);
+    return response.data;
+  }
+);
+
+/**
  * The Redux slice for managing posts state.
  * It includes reducers for handling the different states of the `fetchPosts` async thunk.
  */
@@ -48,6 +60,21 @@ const postsSlice = createSlice({
         state.posts = action.payload;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message || "Something went wrong";
+      })
+      .addCase(fetchPostsByUser.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(
+        fetchPostsByUser.fulfilled,
+        (state, action: PayloadAction<Post[]>) => {
+          state.status = "succeeded";
+          state.posts = action.payload;
+        }
+      )
+      .addCase(fetchPostsByUser.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Something went wrong";
       });

@@ -1,6 +1,6 @@
 import AppHeader from "@/components/AppHeader";
 import LoginPage from "@/components/LoginPage";
-import PostsList from "@/components/PostsList";
+import PostsDataGrid from "@/components/PostsDataGrid";
 import ThemeProvider from "@/components/ThemeProvider";
 import { useAppSelector } from "@/store/hooks";
 import type { AppView, Post } from "@/types";
@@ -63,8 +63,8 @@ const HomePage = () => {
               </Button>
             </Box>
 
-            {/* Posts Table */}
-            <PostsList
+            {/* Posts DataGrid */}
+            <PostsDataGrid
               onEdit={(post) => {
                 setSelectedPost(post);
                 setView("form");
@@ -72,6 +72,10 @@ const HomePage = () => {
               onView={(post) => {
                 setSelectedPost(post);
                 setView("details");
+              }}
+              onDelete={(post) => {
+                // TODO: Implement delete functionality
+                console.log("Delete post:", post);
               }}
             />
           </Container>
