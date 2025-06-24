@@ -4,12 +4,34 @@ A modern single-page application (SPA) built with **Next.js**, **React**, **Redu
 
 ## ✨ Features
 
-- List posts in a paginated, searchable datatable
-- Create new posts via a modal form with validation
+- **User Authentication Simulation**: Select from real users via JSONPlaceholder API
+- **User-filtered Posts**: View posts belonging to the selected (active) user
+- **SPA Navigation**: State-based view switching without page reloads or Next.js routing
+- List posts in a paginated, searchable datatable with sorting and selection
+- Create new posts via a modal form with validation (assigned to active user)
 - Edit existing posts
 - Delete posts
 - Real-time user notifications for all actions
 - Responsive and accessible UI
+
+## 🧭 Navigation Architecture
+
+This application follows a **true SPA (Single Page Application)** pattern:
+
+- **Single Entry Point**: Only `pages/index.tsx` is used - no additional route files
+- **State-based Navigation**: View switching is controlled by local React state
+- **No Page Reloads**: All transitions happen without browser navigation
+- **Conditional Rendering**: Different views are rendered based on state values
+
+### View States
+
+The app switches between three main views:
+
+- `list` - Main posts table with user selection
+- `form` - Post creation/editing interface
+- `details` - Individual post details view
+
+All navigation is handled through state management instead of traditional routing.
 
 ## 🛠️ Tech Stack
 
