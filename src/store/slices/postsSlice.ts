@@ -113,6 +113,52 @@ export const deletePost = createAsyncThunk(
 );
 
 /**
+ * An async thunk for deleting multiple posts that shows notifications.
+ */
+export const deleteMultiplePosts = createAsyncThunk(
+  "posts/deleteMultiplePosts",
+  async (postIds: number[], { dispatch, rejectWithValue }) => {
+    try {
+      console.log(`🗑️ Deleting ${postIds.length} posts:`, postIds);
+
+      // Delete all posts in parallel
+      const deletePromises = postIds.map((postId) =>
+        api.delete(`/posts/${postId}`)
+      );
+
+      await Promise.all(deletePromises);
+
+      // Import here to avoid circular dependency
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: `${postIds.length} posts have been deleted successfully.`,
+          severity: "success",
+          autoHideDuration: 3000,
+        })
+      );
+
+      return postIds;
+    } catch (error) {
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: "Error deleting posts. Please try again.",
+          severity: "error",
+          autoHideDuration: 5000,
+        })
+      );
+
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
+  }
+);
+
+/**
  * The Redux slice for managing posts state.
  * It includes reducers for handling the different states of the `fetchPosts` async thunk.
  */
@@ -161,6 +207,24 @@ const postsSlice = createSlice({
         state.deleteStatus = "failed";
         state.error =
           action.error.message || "Something went wrong deleting the post";
+      })
+      .addCase(deleteMultiplePosts.pending, (state) => {
+        state.deleteStatus = "loading";
+      })
+      .addCase(
+        deleteMultiplePosts.fulfilled,
+        (state, action: PayloadAction<number[]>) => {
+          state.deleteStatus = "succeeded";
+          // Remove the deleted posts from the current posts array
+          state.posts = state.posts.filter(
+            (post) => !action.payload.includes(post.id)
+          );
+        }
+      )
+      .addCase(deleteMultiplePosts.rejected, (state, action) => {
+        state.deleteStatus = "failed";
+        state.error =
+          action.error.message || "Something went wrong deleting the posts";
       });
   },
 });

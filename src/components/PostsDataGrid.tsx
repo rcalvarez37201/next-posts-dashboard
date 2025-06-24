@@ -1,5 +1,9 @@
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { deletePost, fetchPostsByUser } from "@/store/slices/postsSlice";
+import {
+  deleteMultiplePosts,
+  deletePost,
+  fetchPostsByUser,
+} from "@/store/slices/postsSlice";
 import { Post } from "@/types";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -17,9 +21,12 @@ import {
   GridActionsCellItem,
   GridColDef,
   GridRowParams,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid";
 import { useEffect, useRef, useState } from "react";
 import DeleteConfirmDialog from "./DeleteConfirmDialog";
+import DeleteMultipleConfirmDialog from "./DeleteMultipleConfirmDialog";
+import PostsDataGridToolbar from "./PostsDataGridToolbar";
 
 interface PostsDataGridProps {
   onEdit?: (post: Post) => void;
@@ -28,8 +35,8 @@ interface PostsDataGridProps {
 }
 
 /**
- * A modern data grid component for displaying posts using Material-UI DataGrid.
- * Provides advanced features like sorting, filtering, pagination, and row selection.
+ * PostsDataGrid component displays posts in a Material-UI DataGrid with enhanced features.
+ * Includes single and bulk delete functionality with confirmation dialogs.
  */
 const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
   const dispatch = useAppDispatch();
@@ -40,6 +47,11 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
   const lastFetchedUserIdRef = useRef<number | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<Post | null>(
     null
+  );
+  const [rowSelectionModel, setRowSelectionModel] =
+    useState<GridRowSelectionModel>({ ids: new Set(), type: "include" });
+  const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState<Post[]>(
+    []
   );
 
   useEffect(() => {
@@ -60,6 +72,48 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
       lastFetchedUserIdRef.current = null;
     }
   }, [activeUser, dispatch, posts]);
+
+  // Get selected posts objects from IDs
+  const getSelectedPostsObjects = (
+    selectionModel: GridRowSelectionModel
+  ): Post[] => {
+    if (selectionModel.type === "include") {
+      const selectedIds = Array.from(selectionModel.ids).map((id) =>
+        Number(id)
+      );
+      return posts.filter((post) => selectedIds.includes(post.id));
+    } else {
+      // For 'exclude' type, get all posts except the excluded ones
+      const excludedIds = Array.from(selectionModel.ids).map((id) =>
+        Number(id)
+      );
+      return posts.filter((post) => !excludedIds.includes(post.id));
+    }
+  };
+
+  // Get selection count for toolbar
+  const selectedCount =
+    rowSelectionModel.type === "include"
+      ? rowSelectionModel.ids.size
+      : posts.length - rowSelectionModel.ids.size;
+
+  const handleBulkDelete = () => {
+    const selectedPostsObjects = getSelectedPostsObjects(rowSelectionModel);
+    setBulkDeleteConfirmation(selectedPostsObjects);
+  };
+
+  const handleRowSelectionModelChange = (
+    newRowSelectionModel: GridRowSelectionModel
+  ) => {
+    setRowSelectionModel(newRowSelectionModel);
+  };
+
+  const handleBulkDeleteConfirm = (postsToDelete: Post[]) => {
+    const postIds = postsToDelete.map((post) => post.id);
+    dispatch(deleteMultiplePosts(postIds));
+    setBulkDeleteConfirmation([]);
+    setRowSelectionModel({ ids: new Set(), type: "include" }); // Clear selection after deletion
+  };
 
   // Define columns for the DataGrid
   const columns: GridColDef[] = [
@@ -313,6 +367,12 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
         </Typography>
       </Box>
 
+      <PostsDataGridToolbar
+        selectedCount={selectedCount}
+        onBulkDelete={handleBulkDelete}
+        loading={deleteStatus === "loading"}
+      />
+
       <DataGrid
         rows={posts}
         columns={columns}
@@ -324,6 +384,8 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
         pageSizeOptions={[5, 10, 25, 50, 100]}
         checkboxSelection
         disableRowSelectionOnClick
+        rowSelectionModel={rowSelectionModel}
+        onRowSelectionModelChange={handleRowSelectionModelChange}
         getRowHeight={() => 80}
         autoHeight={false}
         density="comfortable"
@@ -382,6 +444,16 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
             setDeleteConfirmation(null);
           }}
           onClose={() => setDeleteConfirmation(null)}
+        />
+      )}
+
+      {bulkDeleteConfirmation.length > 0 && (
+        <DeleteMultipleConfirmDialog
+          open={bulkDeleteConfirmation.length > 0}
+          posts={bulkDeleteConfirmation}
+          loading={deleteStatus === "loading"}
+          onConfirm={handleBulkDeleteConfirm}
+          onClose={() => setBulkDeleteConfirmation([])}
         />
       )}
     </Paper>
