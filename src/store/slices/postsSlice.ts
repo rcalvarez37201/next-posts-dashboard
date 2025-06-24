@@ -35,9 +35,38 @@ export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
  */
 export const fetchPostsByUser = createAsyncThunk(
   "posts/fetchPostsByUser",
-  async (userId: number) => {
-    const response = await api.get<Post[]>(`/users/${userId}/posts`);
-    return response.data;
+  async (userId: number, { dispatch, rejectWithValue }) => {
+    try {
+      console.log(`🔄 Fetching posts for user ID: ${userId}`);
+      const response = await api.get<Post[]>(`/users/${userId}/posts`);
+
+      // Import here to avoid circular dependency
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: `${response.data.length} posts have been loaded successfully.`,
+          severity: "info",
+          autoHideDuration: 3000,
+        })
+      );
+
+      return response.data;
+    } catch (error) {
+      const { showNotification } = await import("./notificationsSlice");
+
+      dispatch(
+        showNotification({
+          message: "Error loading posts. Please try again.",
+          severity: "error",
+          autoHideDuration: 5000,
+        })
+      );
+
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    }
   }
 );
 

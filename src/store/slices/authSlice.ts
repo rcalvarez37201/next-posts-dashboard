@@ -32,6 +32,27 @@ export const fetchUsers = createAsyncThunk("auth/fetchUsers", async () => {
 });
 
 /**
+ * An async thunk for user login that shows a notification.
+ */
+export const loginUser = createAsyncThunk(
+  "auth/loginUser",
+  async (user: User, { dispatch }) => {
+    // Import here to avoid circular dependency
+    const { showNotification } = await import("./notificationsSlice");
+
+    dispatch(
+      showNotification({
+        message: `Welcome, ${user.name}! You have logged in successfully.`,
+        severity: "success",
+        autoHideDuration: 4000,
+      })
+    );
+
+    return user;
+  }
+);
+
+/**
  * The Redux slice for managing authentication state.
  * It includes the active user selection and user management.
  */
@@ -66,6 +87,9 @@ const authSlice = createSlice({
         state.status = "failed";
         state.error =
           action.error.message || "Something went wrong fetching users";
+      })
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<User>) => {
+        state.activeUser = action.payload;
       });
   },
 });

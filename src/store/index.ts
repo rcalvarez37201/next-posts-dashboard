@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
+import notificationsReducer from "./slices/notificationsSlice";
 import postsReducer from "./slices/postsSlice";
 import themeReducer from "./slices/themeSlice";
 
@@ -12,6 +13,7 @@ export const store = configureStore({
     posts: postsReducer,
     auth: authReducer,
     theme: themeReducer,
+    notifications: notificationsReducer,
   },
 });
 

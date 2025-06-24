@@ -1,3 +1,4 @@
+import NotificationSystem from "@/components/NotificationSystem";
 import ThemeProvider from "@/components/ThemeProvider";
 import { store } from "@/store";
 import "@/styles/globals.css";
@@ -9,6 +10,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <Provider store={store}>
       <ThemeProvider>
         <Component {...pageProps} />
+        <NotificationSystem />
       </ThemeProvider>
     </Provider>
   );

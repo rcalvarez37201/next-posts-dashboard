@@ -18,7 +18,7 @@ import {
   GridColDef,
   GridRowParams,
 } from "@mui/x-data-grid";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface PostsDataGridProps {
   onEdit?: (post: Post) => void;
@@ -34,12 +34,26 @@ const PostsDataGrid = ({ onEdit, onView, onDelete }: PostsDataGridProps) => {
   const dispatch = useAppDispatch();
   const { posts, status, error } = useAppSelector((state) => state.posts);
   const { activeUser } = useAppSelector((state) => state.auth);
+  const lastFetchedUserIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (activeUser) {
-      dispatch(fetchPostsByUser(activeUser.id));
+    if (activeUser && activeUser.id !== lastFetchedUserIdRef.current) {
+      // Check if we already have posts for this user to avoid unnecessary requests
+      const hasPostsForUser =
+        posts.length > 0 && posts[0]?.userId === activeUser.id;
+
+      if (!hasPostsForUser) {
+        lastFetchedUserIdRef.current = activeUser.id;
+        dispatch(fetchPostsByUser(activeUser.id));
+      } else {
+        // We already have posts for this user, just update the ref
+        lastFetchedUserIdRef.current = activeUser.id;
+      }
+    } else if (!activeUser) {
+      // Reset the ref when user logs out
+      lastFetchedUserIdRef.current = null;
     }
-  }, [activeUser, dispatch]);
+  }, [activeUser, dispatch, posts]);
 
   // Define columns for the DataGrid
   const columns: GridColDef[] = [

@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchUsers, setActiveUser } from "@/store/slices/authSlice";
+import { fetchUsers, loginUser } from "@/store/slices/authSlice";
 import { getAvatarColor, getInitials } from "@/utils";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import {
@@ -45,7 +45,7 @@ const LoginPage = () => {
       (user) => user.id.toString() === selectedUserId
     );
     if (selectedUser) {
-      dispatch(setActiveUser(selectedUser));
+      dispatch(loginUser(selectedUser));
     }
   };
 
