@@ -360,7 +360,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                   />
                 </Tooltip>
               }
-              label="Ver"
+              label="View"
               onClick={() => {
                 if (onView) {
                   onView(post);
@@ -433,7 +433,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
       >
         <CircularProgress />
         <Typography variant="body2" sx={{ ml: 2 }}>
-          Cargando posts...
+          Loading posts...
         </Typography>
       </Box>
     );
@@ -443,7 +443,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   if (status === "failed") {
     return (
       <Alert severity="error" sx={{ mt: 2 }}>
-        Error al cargar posts: {error}
+        Error loading posts: {error}
       </Alert>
     );
   }
@@ -458,7 +458,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
         minHeight="400px"
       >
         <Typography variant="h6" color="text.secondary">
-          Por favor selecciona un usuario para ver sus posts
+          Please select a user to view their posts
         </Typography>
       </Box>
     );
@@ -469,7 +469,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
       <Paper sx={{ width: "100%" }}>
         <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
           <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-            Posts de {activeUser.name}
+            Posts by {activeUser.name}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {posts.length} posts found
@@ -546,13 +546,13 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
               >
                 <Typography variant="body1" color="text.secondary">
                   {searchValue
-                    ? "No se encontraron posts que coincidan con la búsqueda"
-                    : "No se encontraron posts"}
+                    ? "No posts found matching the search"
+                    : "No posts found"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {searchValue
-                    ? `Intenta con otros términos de búsqueda`
-                    : "Este usuario aún no ha creado ningún post"}
+                    ? `Try different search terms`
+                    : "This user hasn't created any posts yet"}
                 </Typography>
               </Box>
             ),

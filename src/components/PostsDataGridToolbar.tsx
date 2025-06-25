@@ -130,8 +130,7 @@ const PostsDataGridToolbar = ({
                 color="text.primary"
                 sx={{ fontWeight: 500 }}
               >
-                {selectedCount} post{selectedCount !== 1 ? "s" : ""}{" "}
-                seleccionado{selectedCount !== 1 ? "s" : ""}
+                {selectedCount} post{selectedCount !== 1 ? "s" : ""} selected
               </Typography>
             </Box>
 
@@ -149,7 +148,7 @@ const PostsDataGridToolbar = ({
                   },
                 }}
               >
-                {loading ? "Eliminando..." : "Eliminar Seleccionados"}
+                {loading ? "Deleting..." : "Delete Selected"}
               </Button>
             </Box>
           </Box>
@@ -164,8 +163,8 @@ const PostsDataGridToolbar = ({
                 },
               }}
             >
-              Estás a punto de eliminar {selectedCount} posts. Esta acción no se
-              puede deshacer.
+              Are you sure you want to delete {selectedCount} posts? This action
+              cannot be undone.
             </Alert>
           )}
         </Paper>
