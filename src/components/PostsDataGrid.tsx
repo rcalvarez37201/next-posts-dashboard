@@ -35,7 +35,7 @@ interface PostsDataGridProps {
 
 /**
  * PostsDataGrid component displays posts in a Material-UI DataGrid with enhanced features.
- * Includes single and bulk delete functionality with confirmation dialogs.
+ * Includes search functionality, single and bulk delete with confirmation dialogs.
  */
 const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   const dispatch = useAppDispatch();
@@ -44,6 +44,10 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   );
   const { activeUser } = useAppSelector((state) => state.auth);
   const lastFetchedUserIdRef = useRef<number | null>(null);
+
+  // Search and filtering state
+  const [searchValue, setSearchValue] = useState("");
+  const [quickFilterValues, setQuickFilterValues] = useState<string[]>([]);
 
   // Helper function to create safe HTML for rendering (removes dangerous tags)
   const createSafeHTML = (htmlContent: string): string => {
@@ -87,6 +91,38 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
       lastFetchedUserIdRef.current = null;
     }
   }, [activeUser, dispatch, posts]);
+
+  // Handle search functionality
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    if (value.trim()) {
+      // Split the search value by spaces to create multiple search terms
+      const searchTerms = value
+        .trim()
+        .split(/\s+/)
+        .filter((term) => term.length > 0);
+      setQuickFilterValues(searchTerms);
+    } else {
+      setQuickFilterValues([]);
+    }
+  };
+
+  // Custom filter function for posts search
+  const getApplyQuickFilterFn = (value: string) => {
+    if (!value || value.trim() === "") {
+      return null;
+    }
+
+    const searchTerm = value.toLowerCase();
+
+    return (cellValue: unknown, row: Post) => {
+      // Search in both title and body fields
+      const title = (row.title || "").toLowerCase();
+      const body = (row.body || "").toLowerCase();
+
+      return title.includes(searchTerm) || body.includes(searchTerm);
+    };
+  };
 
   // Get selected posts objects from IDs
   const getSelectedPostsObjects = (
@@ -140,9 +176,10 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     },
     {
       field: "title",
-      headerName: "Title",
+      headerName: "Título",
       flex: 1,
       minWidth: 200,
+      getApplyQuickFilterFn,
       renderCell: (params) => (
         <Box
           sx={{
@@ -193,9 +230,10 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     },
     {
       field: "body",
-      headerName: "Content",
+      headerName: "Contenido",
       flex: 2,
       minWidth: 300,
+      getApplyQuickFilterFn,
       renderCell: (params) => {
         const htmlContent = params.value || "";
         const safeHTML = createSafeHTML(htmlContent);
@@ -297,7 +335,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     {
       field: "actions",
       type: "actions",
-      headerName: "Actions",
+      headerName: "Acciones",
       width: 120,
       getActions: (params: GridRowParams) => {
         const post = params.row as Post;
@@ -308,7 +346,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
             <GridActionsCellItem
               key="view"
               icon={
-                <Tooltip title="View post">
+                <Tooltip title="Ver post">
                   <VisibilityIcon
                     sx={{
                       color: "info.main",
@@ -319,7 +357,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                   />
                 </Tooltip>
               }
-              label="View"
+              label="Ver"
               onClick={() => onView(post)}
             />
           );
@@ -330,7 +368,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
             <GridActionsCellItem
               key="edit"
               icon={
-                <Tooltip title="Edit post">
+                <Tooltip title="Editar post">
                   <EditIcon
                     sx={{
                       color: "warning.main",
@@ -341,7 +379,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                   />
                 </Tooltip>
               }
-              label="Edit"
+              label="Editar"
               onClick={() => onEdit(post)}
             />
           );
@@ -352,7 +390,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
           <GridActionsCellItem
             key="delete"
             icon={
-              <Tooltip title="Delete post">
+              <Tooltip title="Eliminar post">
                 <DeleteIcon
                   sx={{
                     color: "error.main",
@@ -363,7 +401,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                 />
               </Tooltip>
             }
-            label="Delete"
+            label="Eliminar"
             onClick={() => {
               setDeleteConfirmation(post);
             }}
@@ -386,7 +424,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
       >
         <CircularProgress />
         <Typography variant="body2" sx={{ ml: 2 }}>
-          Loading posts...
+          Cargando posts...
         </Typography>
       </Box>
     );
@@ -396,7 +434,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   if (status === "failed") {
     return (
       <Alert severity="error" sx={{ mt: 2 }}>
-        Error loading posts: {error}
+        Error al cargar posts: {error}
       </Alert>
     );
   }
@@ -411,7 +449,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
         minHeight="400px"
       >
         <Typography variant="h6" color="text.secondary">
-          Please select a user to view their posts
+          Por favor selecciona un usuario para ver sus posts
         </Typography>
       </Box>
     );
@@ -421,10 +459,10 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     <Paper sx={{ width: "100%" }}>
       <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-          Posts by {activeUser.name}
+          Posts de {activeUser.name}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {posts.length} posts found
+          {posts.length} posts encontrados
         </Typography>
       </Box>
 
@@ -432,6 +470,8 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
         selectedCount={selectedCount}
         onBulkDelete={handleBulkDelete}
         loading={deleteStatus === "loading"}
+        searchValue={searchValue}
+        onSearchChange={handleSearchChange}
       />
 
       <DataGrid
@@ -441,6 +481,16 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
           pagination: {
             paginationModel: { pageSize: 5, page: 0 },
           },
+          filter: {
+            filterModel: {
+              items: [],
+              quickFilterValues: quickFilterValues,
+            },
+          },
+        }}
+        filterModel={{
+          items: [],
+          quickFilterValues: quickFilterValues,
         }}
         pageSizeOptions={[5, 10, 25, 50, 100]}
         checkboxSelection
@@ -485,10 +535,14 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
               }}
             >
               <Typography variant="body1" color="text.secondary">
-                No posts found
+                {searchValue
+                  ? "No se encontraron posts que coincidan con la búsqueda"
+                  : "No se encontraron posts"}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                This user hasn&apos;t created any posts yet
+                {searchValue
+                  ? `Intenta con otros términos de búsqueda`
+                  : "Este usuario aún no ha creado ningún post"}
               </Typography>
             </Box>
           ),
