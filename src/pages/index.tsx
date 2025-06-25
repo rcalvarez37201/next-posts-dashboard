@@ -3,7 +3,8 @@ import LoginPage from "@/components/LoginPage";
 import PostFormModal from "@/components/PostFormModal";
 import PostsDataGrid from "@/components/PostsDataGrid";
 import ThemeProvider from "@/components/ThemeProvider";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { resetSubmitStatus } from "@/store/slices/postsSlice";
 import type { Post } from "@/types";
 import { Add as AddIcon } from "@mui/icons-material";
 import { Box, Button, Container, Typography } from "@mui/material";
@@ -16,8 +17,10 @@ import { useState } from "react";
  */
 const HomePage = () => {
   const { activeUser } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [modalKey, setModalKey] = useState(Date.now()); // State for unique key
 
   // If no user is active, show login page
   if (!activeUser) {
@@ -29,11 +32,14 @@ const HomePage = () => {
   }
 
   const handleNewPost = () => {
+    dispatch(resetSubmitStatus());
     setSelectedPost(null);
+    setModalKey(Date.now()); // Update key to force remount
     setIsFormModalOpen(true);
   };
 
   const handleEditPost = (post: Post) => {
+    dispatch(resetSubmitStatus());
     setSelectedPost(post);
     setIsFormModalOpen(true);
   };
@@ -98,6 +104,7 @@ const HomePage = () => {
 
           {/* Post Form Modal */}
           <PostFormModal
+            key={selectedPost ? `post-${selectedPost.id}` : `new-${modalKey}`}
             open={isFormModalOpen}
             onClose={handleCloseFormModal}
             post={selectedPost}

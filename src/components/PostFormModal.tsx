@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import TiptapEditor from "./TiptapEditor";
 
@@ -40,88 +40,65 @@ const PostFormModal = ({ open, onClose, post }: PostFormModalProps) => {
   const { submitStatus } = useAppSelector((state) => state.posts);
   const { activeUser } = useAppSelector((state) => state.auth);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const isEditMode = !!post;
-  const isLoading = submitStatus === "loading";
+  const isLoading = submitStatus === "loading" || isSubmitting;
 
   const {
     control,
     handleSubmit,
-    reset,
     formState: { errors, isValid },
   } = useForm<PostFormData>({
-    mode: "onChange",
+    mode: "onSubmit",
+    reValidateMode: "onChange",
     defaultValues: {
-      title: "",
-      body: "",
+      title: post?.title || "",
+      body: post?.body || "",
     },
   });
 
-  // Reset form when modal opens/closes or when post changes
+  // Close modal automatically on successful submission
   useEffect(() => {
-    if (open) {
-      if (isEditMode && post) {
-        reset({
-          title: post.title,
-          body: post.body,
-        });
-      } else {
-        reset({
-          title: "",
-          body: "",
-        });
-      }
-    }
-  }, [open, isEditMode, post, reset]);
-
-  // Close modal when submit is successful
-  useEffect(() => {
-    if (submitStatus === "succeeded" && open) {
+    if (submitStatus === "succeeded") {
       onClose();
     }
-  }, [submitStatus, open, onClose]);
+  }, [submitStatus, onClose]);
 
   const onSubmit = async (data: PostFormData) => {
-    if (!activeUser) {
-      console.error("No active user found");
-      return;
-    }
+    if (isLoading) return;
+    setIsSubmitting(true);
 
     try {
       if (isEditMode && post) {
-        // Update existing post
         await dispatch(
           updatePost({
             id: post.id,
             title: data.title.trim(),
             body: data.body.trim(),
-            userId: activeUser.id,
+            userId: activeUser!.id, // activeUser is checked by the disabled button state
           })
         ).unwrap();
       } else {
-        // Create new post
         await dispatch(
           createPost({
             title: data.title.trim(),
             body: data.body.trim(),
-            userId: activeUser.id,
+            userId: activeUser!.id, // activeUser is checked by the disabled button state
           })
         ).unwrap();
       }
     } catch (error) {
       console.error("Error submitting post:", error);
-    }
-  };
-
-  const handleClose = () => {
-    if (!isLoading) {
-      onClose();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       maxWidth="md"
       fullWidth
       aria-labelledby="post-form-dialog-title"
@@ -257,30 +234,15 @@ const PostFormModal = ({ open, onClose, post }: PostFormModalProps) => {
         <Divider />
 
         <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-          <Button
-            onClick={handleClose}
-            disabled={isLoading}
-            variant="outlined"
-            color="inherit"
-            sx={{
-              textTransform: "none",
-              borderRadius: 1,
-              minWidth: 80,
-            }}
-          >
+          <Button onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || !isValid || !activeUser}
+            disabled={!isValid || isLoading || !activeUser}
             variant="contained"
             color="primary"
             startIcon={isLoading ? <CircularProgress size={16} /> : null}
-            sx={{
-              textTransform: "none",
-              borderRadius: 1,
-              minWidth: 120,
-            }}
           >
             {isLoading
               ? isEditMode

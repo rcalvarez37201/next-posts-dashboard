@@ -165,6 +165,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       ],
       content: initialContent,
       editable: !disabled,
+      immediatelyRender: false,
       onUpdate: ({ editor }) => {
         const html = editor.getHTML();
         onChange?.(html);
@@ -191,8 +192,12 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     useEffect(() => {
       if (editor && initialContent !== editor.getHTML()) {
         editor.commands.setContent(initialContent);
+        // Trigger onChange to sync with form
+        if (onChange) {
+          onChange(initialContent);
+        }
       }
-    }, [editor, initialContent]);
+    }, [editor, initialContent, onChange]);
 
     if (!editor) {
       return null;
