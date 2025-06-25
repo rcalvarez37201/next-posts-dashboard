@@ -27,6 +27,7 @@ import { useEffect, useRef, useState } from "react";
 import DeleteConfirmDialog from "./DeleteConfirmDialog";
 import DeleteMultipleConfirmDialog from "./DeleteMultipleConfirmDialog";
 import PostsDataGridToolbar from "./PostsDataGridToolbar";
+import PostDetailsDialog from "./PostDetailsDialog";
 
 interface PostsDataGridProps {
   onEdit?: (post: Post) => void;
@@ -72,6 +73,8 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState<Post[]>(
     []
   );
+  const [selectedPostForDetails, setSelectedPostForDetails] =
+    useState<Post | null>(null);
 
   useEffect(() => {
     if (activeUser && activeUser.id !== lastFetchedUserIdRef.current) {
@@ -176,7 +179,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     },
     {
       field: "title",
-      headerName: "Título",
+      headerName: "Title",
       flex: 1,
       minWidth: 200,
       getApplyQuickFilterFn,
@@ -230,7 +233,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     },
     {
       field: "body",
-      headerName: "Contenido",
+      headerName: "Content",
       flex: 2,
       minWidth: 300,
       getApplyQuickFilterFn,
@@ -335,7 +338,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
     {
       field: "actions",
       type: "actions",
-      headerName: "Acciones",
+      headerName: "Actions",
       width: 120,
       getActions: (params: GridRowParams) => {
         const post = params.row as Post;
@@ -346,7 +349,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
             <GridActionsCellItem
               key="view"
               icon={
-                <Tooltip title="Ver post">
+                <Tooltip title="View post">
                   <VisibilityIcon
                     sx={{
                       color: "info.main",
@@ -358,7 +361,13 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                 </Tooltip>
               }
               label="Ver"
-              onClick={() => onView(post)}
+              onClick={() => {
+                if (onView) {
+                  onView(post);
+                } else {
+                  setSelectedPostForDetails(post);
+                }
+              }}
             />
           );
         }
@@ -368,7 +377,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
             <GridActionsCellItem
               key="edit"
               icon={
-                <Tooltip title="Editar post">
+                <Tooltip title="Edit post">
                   <EditIcon
                     sx={{
                       color: "warning.main",
@@ -379,7 +388,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                   />
                 </Tooltip>
               }
-              label="Editar"
+              label="Edit"
               onClick={() => onEdit(post)}
             />
           );
@@ -390,7 +399,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
           <GridActionsCellItem
             key="delete"
             icon={
-              <Tooltip title="Eliminar post">
+              <Tooltip title="Delete post">
                 <DeleteIcon
                   sx={{
                     color: "error.main",
@@ -401,7 +410,7 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
                 />
               </Tooltip>
             }
-            label="Eliminar"
+            label="Delete"
             onClick={() => {
               setDeleteConfirmation(post);
             }}
@@ -456,122 +465,130 @@ const PostsDataGrid = ({ onEdit, onView }: PostsDataGridProps) => {
   }
 
   return (
-    <Paper sx={{ width: "100%" }}>
-      <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
-          Posts de {activeUser.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {posts.length} posts encontrados
-        </Typography>
-      </Box>
+    <>
+      <Paper sx={{ width: "100%" }}>
+        <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+            Posts de {activeUser.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {posts.length} posts found
+          </Typography>
+        </Box>
 
-      <PostsDataGridToolbar
-        selectedCount={selectedCount}
-        onBulkDelete={handleBulkDelete}
-        loading={deleteStatus === "loading"}
-        searchValue={searchValue}
-        onSearchChange={handleSearchChange}
-      />
+        <PostsDataGridToolbar
+          selectedCount={selectedCount}
+          onBulkDelete={handleBulkDelete}
+          loading={deleteStatus === "loading"}
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
+        />
 
-      <DataGrid
-        rows={posts}
-        columns={columns}
-        initialState={{
-          pagination: {
-            paginationModel: { pageSize: 5, page: 0 },
-          },
-          filter: {
-            filterModel: {
-              items: [],
-              quickFilterValues: quickFilterValues,
+        <DataGrid
+          rows={posts}
+          columns={columns}
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 5, page: 0 },
             },
-          },
-        }}
-        filterModel={{
-          items: [],
-          quickFilterValues: quickFilterValues,
-        }}
-        pageSizeOptions={[5, 10, 25, 50, 100]}
-        checkboxSelection
-        disableRowSelectionOnClick
-        rowSelectionModel={rowSelectionModel}
-        onRowSelectionModelChange={handleRowSelectionModelChange}
-        getRowHeight={() => 80}
-        autoHeight={false}
-        density="comfortable"
-        sx={{
-          border: 0,
-          minHeight: 500,
-          "& .MuiDataGrid-cell": {
-            borderColor: "divider",
-            display: "flex",
-            alignItems: "center",
-            minHeight: "80px !important",
-            maxHeight: "80px !important",
-          },
-          "& .MuiDataGrid-row": {
-            minHeight: "80px !important",
-            maxHeight: "80px !important",
-          },
-          "& .MuiDataGrid-columnHeaders": {
-            backgroundColor: "action.hover",
-            borderColor: "divider",
-          },
-          "& .MuiDataGrid-virtualScroller": {
-            minHeight: "400px !important",
-          },
-        }}
-        slots={{
-          noRowsOverlay: () => (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-                gap: 1,
-              }}
-            >
-              <Typography variant="body1" color="text.secondary">
-                {searchValue
-                  ? "No se encontraron posts que coincidan con la búsqueda"
-                  : "No se encontraron posts"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {searchValue
-                  ? `Intenta con otros términos de búsqueda`
-                  : "Este usuario aún no ha creado ningún post"}
-              </Typography>
-            </Box>
-          ),
-        }}
-      />
-
-      {deleteConfirmation && (
-        <DeleteConfirmDialog
-          open={!!deleteConfirmation}
-          post={deleteConfirmation}
-          loading={deleteStatus === "loading"}
-          onConfirm={(post) => {
-            dispatch(deletePost(post));
-            setDeleteConfirmation(null);
+            filter: {
+              filterModel: {
+                items: [],
+                quickFilterValues: quickFilterValues,
+              },
+            },
           }}
-          onClose={() => setDeleteConfirmation(null)}
+          filterModel={{
+            items: [],
+            quickFilterValues: quickFilterValues,
+          }}
+          pageSizeOptions={[5, 10, 25, 50, 100]}
+          checkboxSelection
+          disableRowSelectionOnClick
+          rowSelectionModel={rowSelectionModel}
+          onRowSelectionModelChange={handleRowSelectionModelChange}
+          getRowHeight={() => 80}
+          autoHeight={false}
+          density="comfortable"
+          sx={{
+            border: 0,
+            minHeight: 500,
+            "& .MuiDataGrid-cell": {
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+              minHeight: "80px !important",
+              maxHeight: "80px !important",
+            },
+            "& .MuiDataGrid-row": {
+              minHeight: "80px !important",
+              maxHeight: "80px !important",
+            },
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: "action.hover",
+              borderColor: "divider",
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              minHeight: "400px !important",
+            },
+          }}
+          slots={{
+            noRowsOverlay: () => (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="body1" color="text.secondary">
+                  {searchValue
+                    ? "No se encontraron posts que coincidan con la búsqueda"
+                    : "No se encontraron posts"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchValue
+                    ? `Intenta con otros términos de búsqueda`
+                    : "Este usuario aún no ha creado ningún post"}
+                </Typography>
+              </Box>
+            ),
+          }}
         />
-      )}
 
-      {bulkDeleteConfirmation.length > 0 && (
-        <DeleteMultipleConfirmDialog
-          open={bulkDeleteConfirmation.length > 0}
-          posts={bulkDeleteConfirmation}
-          loading={deleteStatus === "loading"}
-          onConfirm={handleBulkDeleteConfirm}
-          onClose={() => setBulkDeleteConfirmation([])}
-        />
-      )}
-    </Paper>
+        {deleteConfirmation && (
+          <DeleteConfirmDialog
+            open={!!deleteConfirmation}
+            post={deleteConfirmation}
+            loading={deleteStatus === "loading"}
+            onConfirm={(post) => {
+              dispatch(deletePost(post));
+              setDeleteConfirmation(null);
+            }}
+            onClose={() => setDeleteConfirmation(null)}
+          />
+        )}
+
+        {bulkDeleteConfirmation.length > 0 && (
+          <DeleteMultipleConfirmDialog
+            open={bulkDeleteConfirmation.length > 0}
+            posts={bulkDeleteConfirmation}
+            loading={deleteStatus === "loading"}
+            onConfirm={handleBulkDeleteConfirm}
+            onClose={() => setBulkDeleteConfirmation([])}
+          />
+        )}
+      </Paper>
+
+      <PostDetailsDialog
+        open={!!selectedPostForDetails}
+        post={selectedPostForDetails}
+        onClose={() => setSelectedPostForDetails(null)}
+      />
+    </>
   );
 };
 

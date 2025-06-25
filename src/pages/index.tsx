@@ -2,6 +2,7 @@ import AppHeader from "@/components/AppHeader";
 import LoginPage from "@/components/LoginPage";
 import PostFormModal from "@/components/PostFormModal";
 import PostsDataGrid from "@/components/PostsDataGrid";
+import PostDetailsDialog from "@/components/PostDetailsDialog";
 import ThemeProvider from "@/components/ThemeProvider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { resetSubmitStatus } from "@/store/slices/postsSlice";
@@ -21,6 +22,9 @@ const HomePage = () => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(Date.now()); // State for unique key
+  const [selectedPostForView, setSelectedPostForView] = useState<Post | null>(
+    null
+  );
 
   // If no user is active, show login page
   if (!activeUser) {
@@ -96,8 +100,8 @@ const HomePage = () => {
             <PostsDataGrid
               onEdit={handleEditPost}
               onView={(post) => {
-                // TODO: Implement view details functionality
-                console.log("View post:", post);
+                console.log("Opening post details for:", post);
+                setSelectedPostForView(post);
               }}
             />
           </Container>
@@ -108,6 +112,13 @@ const HomePage = () => {
             open={isFormModalOpen}
             onClose={handleCloseFormModal}
             post={selectedPost}
+          />
+
+          {/* Post Details Dialog */}
+          <PostDetailsDialog
+            open={!!selectedPostForView}
+            post={selectedPostForView}
+            onClose={() => setSelectedPostForView(null)}
           />
         </Box>
       </ThemeProvider>
