@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchUserTodos, toggleTodo } from "@/store/slices/todosSlice";
+// Albums functionality moved to PhotoGallery component
 import { getAvatarColor, getInitials } from "@/utils";
+import PhotoGallery from "./PhotoGallery";
 import {
   AccountCircle as AccountCircleIcon,
   Business as BusinessIcon,
@@ -13,6 +15,7 @@ import {
   Assignment as AssignmentIcon,
   CheckCircle as CheckCircleIcon,
   RadioButtonUnchecked as RadioButtonUncheckedIcon,
+  PhotoLibrary as PhotoLibraryIcon,
 } from "@mui/icons-material";
 import {
   Avatar,
@@ -67,13 +70,17 @@ function a11yProps(index: number) {
 
 /**
  * UserProfile component that displays detailed information about the active user.
- * Shows personal information, contact details, address, company information, and user todos.
+ * Shows personal information, contact details, address, company information, user todos, and photo gallery.
  * Follows admin dashboard layout guidelines with Material UI components.
  */
 const UserProfile = () => {
   const dispatch = useAppDispatch();
   const { activeUser } = useAppSelector((state) => state.auth);
-  const { todos, loading, error } = useAppSelector((state) => state.todos);
+  const {
+    todos,
+    loading: todosLoading,
+    error: todosError,
+  } = useAppSelector((state) => state.todos);
   const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
@@ -304,6 +311,12 @@ const UserProfile = () => {
                   iconPosition="start"
                   label="Tasks"
                   {...a11yProps(1)}
+                />
+                <Tab
+                  icon={<PhotoLibraryIcon />}
+                  iconPosition="start"
+                  label="Gallery"
+                  {...a11yProps(2)}
                 />
               </Tabs>
             </Box>
@@ -592,13 +605,13 @@ const UserProfile = () => {
                   User Tasks
                 </Typography>
 
-                {error && (
+                {todosError && (
                   <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
+                    {todosError}
                   </Alert>
                 )}
 
-                {loading ? (
+                {todosLoading ? (
                   <Box>
                     {[...Array(5)].map((_, index) => (
                       <Box key={index} sx={{ mb: 2 }}>
@@ -693,6 +706,13 @@ const UserProfile = () => {
                     </Typography>
                   </Box>
                 )}
+              </Box>
+            </TabPanel>
+
+            {/* Tab Panel 3: Photo Gallery */}
+            <TabPanel value={tabValue} index={2}>
+              <Box sx={{ p: 3 }}>
+                <PhotoGallery userId={activeUser.id} />
               </Box>
             </TabPanel>
           </Card>

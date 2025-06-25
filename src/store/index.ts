@@ -5,6 +5,7 @@ import notificationsReducer from "./slices/notificationsSlice";
 import postsReducer from "./slices/postsSlice";
 import themeReducer from "./slices/themeSlice";
 import todosReducer from "./slices/todosSlice";
+import albumsReducer from "./slices/albumsSlice";
 
 /**
  * The main Redux store for the application.
@@ -18,6 +19,7 @@ export const store = configureStore({
     notifications: notificationsReducer,
     comments: commentsReducer,
     todos: todosReducer,
+    albums: albumsReducer,
   },
 });
 

@@ -78,3 +78,48 @@ export function getInitials(name: string): string {
 
   return initials;
 }
+
+/**
+ * Truncates a string to a maximum length and adds ellipsis if needed.
+ */
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + "...";
+}
+
+/**
+ * Generates an array of vibrant colors for photo placeholders
+ */
+const PLACEHOLDER_COLORS = [
+  "FF6B6B", // Coral Red
+  "4ECDC4", // Teal
+  "45B7D1", // Sky Blue
+  "96CEB4", // Mint Green
+  "FECA57", // Sunny Yellow
+  "FF9FF3", // Pink
+  "54A0FF", // Bright Blue
+  "5F27CD", // Purple
+  "FF6348", // Orange Red
+  "1DD1A1", // Green
+  "F0932B", // Orange
+  "EB4D4B", // Red
+  "6C5CE7", // Lavender
+  "FDA7DF", // Light Pink
+  "A3CB38", // Lime Green
+];
+
+/**
+ * Generates a consistent color based on photo ID
+ */
+export function getPhotoColor(photoId: number): string {
+  return PLACEHOLDER_COLORS[photoId % PLACEHOLDER_COLORS.length];
+}
+
+/**
+ * Extracts hex color from JSONPlaceholder photo URL
+ * URLs are like: https://via.placeholder.com/600/92c952
+ */
+export function extractColorFromPhotoUrl(url: string): string {
+  const match = url.match(/\/([a-fA-F0-9]{6})(?:\/|$)/);
+  return match ? match[1] : getPhotoColor(1); // fallback to generated color
+}
