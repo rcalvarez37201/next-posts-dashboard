@@ -4,21 +4,29 @@ import PostFormModal from "@/components/PostFormModal";
 import PostsDataGrid from "@/components/PostsDataGrid";
 import PostDetailsDialog from "@/components/PostDetailsDialog";
 import ThemeProvider from "@/components/ThemeProvider";
+import UserProfile from "@/components/UserProfile";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { resetSubmitStatus } from "@/store/slices/postsSlice";
 import type { Post } from "@/types";
-import { Add as AddIcon } from "@mui/icons-material";
-import { Box, Button, Container, Typography } from "@mui/material";
+import {
+  Add as AddIcon,
+  ArrowBack as ArrowBackIcon,
+} from "@mui/icons-material";
+import { Box, Button, Container, IconButton, Typography } from "@mui/material";
 import Head from "next/head";
 import { useState } from "react";
+
+type AppView = "posts" | "profile";
 
 /**
  * Main application page component following SPA pattern.
  * Uses modals for post creation/editing instead of separate views.
+ * Implements view-based navigation for posts and user profile.
  */
 const HomePage = () => {
   const { activeUser } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
+  const [currentView, setCurrentView] = useState<AppView>("posts");
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(Date.now()); // State for unique key
@@ -34,6 +42,14 @@ const HomePage = () => {
       </ThemeProvider>
     );
   }
+
+  const handleNavigateToProfile = () => {
+    setCurrentView("profile");
+  };
+
+  const handleNavigateToPosts = () => {
+    setCurrentView("posts");
+  };
 
   const handleNewPost = () => {
     dispatch(resetSubmitStatus());
@@ -67,44 +83,88 @@ const HomePage = () => {
 
       <ThemeProvider>
         <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-          <AppHeader />
+          <AppHeader onNavigateToProfile={handleNavigateToProfile} />
 
-          <Container maxWidth="lg" sx={{ py: 3 }}>
-            {/* Page Header */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 3,
-              }}
-            >
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
-                Posts Management
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleNewPost}
+          {/* Profile View */}
+          {currentView === "profile" && (
+            <>
+              {/* Back Navigation */}
+              <Container maxWidth="lg" sx={{ pt: 2, pb: 0 }}>
+                <Box sx={{ mb: 2 }}>
+                  <IconButton
+                    onClick={handleNavigateToPosts}
+                    sx={{
+                      mr: 1,
+                      color: "primary.main",
+                      "&:hover": {
+                        backgroundColor: "primary.main",
+                        color: "primary.contrastText",
+                      },
+                    }}
+                  >
+                    <ArrowBackIcon />
+                  </IconButton>
+                  <Typography
+                    variant="body1"
+                    component="span"
+                    sx={{
+                      color: "text.secondary",
+                      cursor: "pointer",
+                      "&:hover": { color: "primary.main" },
+                    }}
+                    onClick={handleNavigateToPosts}
+                  >
+                    Back to Posts
+                  </Typography>
+                </Box>
+              </Container>
+              <UserProfile />
+            </>
+          )}
+
+          {/* Posts List View */}
+          {currentView === "posts" && (
+            <Container maxWidth="lg" sx={{ py: 3 }}>
+              {/* Page Header */}
+              <Box
                 sx={{
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontWeight: 500,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 3,
                 }}
               >
-                New Post
-              </Button>
-            </Box>
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  sx={{ fontWeight: 600 }}
+                >
+                  Posts Management
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleNewPost}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  New Post
+                </Button>
+              </Box>
 
-            {/* Posts DataGrid */}
-            <PostsDataGrid
-              onEdit={handleEditPost}
-              onView={(post) => {
-                console.log("Opening post details for:", post);
-                setSelectedPostForView(post);
-              }}
-            />
-          </Container>
+              {/* Posts DataGrid */}
+              <PostsDataGrid
+                onEdit={handleEditPost}
+                onView={(post) => {
+                  console.log("Opening post details for:", post);
+                  setSelectedPostForView(post);
+                }}
+              />
+            </Container>
+          )}
 
           {/* Post Form Modal */}
           <PostFormModal

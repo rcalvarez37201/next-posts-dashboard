@@ -3,6 +3,7 @@ import { clearActiveUser } from "@/store/slices/authSlice";
 import { getAvatarColor, getInitials } from "@/utils";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PersonIcon from "@mui/icons-material/Person";
 import {
   AppBar,
   Avatar,
@@ -23,7 +24,11 @@ import ThemeToggle from "./ThemeToggle";
  * Follows admin dashboard layout guidelines with user info display.
  * Only shows when a user is logged in.
  */
-const AppHeader = () => {
+interface AppHeaderProps {
+  onNavigateToProfile?: () => void;
+}
+
+const AppHeader = ({ onNavigateToProfile }: AppHeaderProps) => {
   const dispatch = useAppDispatch();
   const { activeUser } = useAppSelector((state) => state.auth);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(
@@ -40,6 +45,13 @@ const AppHeader = () => {
 
   const handleLogout = () => {
     dispatch(clearActiveUser());
+    handleUserMenuClose();
+  };
+
+  const handleViewProfile = () => {
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
+    }
     handleUserMenuClose();
   };
 
@@ -176,6 +188,13 @@ const AppHeader = () => {
                 </Typography>
               </Box>
             </Box>
+
+            <MenuItem onClick={handleViewProfile}>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>View Profile</ListItemText>
+            </MenuItem>
 
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
