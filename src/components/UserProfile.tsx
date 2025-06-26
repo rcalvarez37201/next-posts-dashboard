@@ -292,38 +292,92 @@ const UserProfile = () => {
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="profile tabs"
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
                 sx={{
                   "& .MuiTab-root": {
                     textTransform: "none",
                     fontWeight: 600,
-                    fontSize: "1rem",
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                    minWidth: { xs: "auto", sm: 120 },
+                    padding: { xs: "8px 12px", sm: "12px 16px" },
+                  },
+                  "& .MuiTabs-flexContainer": {
+                    gap: { xs: 0, sm: 1 },
                   },
                 }}
               >
                 <Tab
-                  icon={<PersonIcon />}
+                  icon={<PersonIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />}
                   iconPosition="start"
-                  label="Personal Information"
+                  label={
+                    <Box
+                      sx={{
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      Personal Information
+                    </Box>
+                  }
+                  aria-label="Personal Information"
                   {...a11yProps(0)}
+                  sx={{
+                    "& .MuiTab-iconWrapper": {
+                      marginRight: { xs: 0, sm: 1 },
+                    },
+                  }}
                 />
                 <Tab
-                  icon={<AssignmentIcon />}
+                  icon={
+                    <AssignmentIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                  }
                   iconPosition="start"
-                  label="Tasks"
+                  label={
+                    <Box
+                      sx={{
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      Tasks
+                    </Box>
+                  }
+                  aria-label="Tasks"
                   {...a11yProps(1)}
+                  sx={{
+                    "& .MuiTab-iconWrapper": {
+                      marginRight: { xs: 0, sm: 1 },
+                    },
+                  }}
                 />
                 <Tab
-                  icon={<PhotoLibraryIcon />}
+                  icon={
+                    <PhotoLibraryIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                  }
                   iconPosition="start"
-                  label="Gallery"
+                  label={
+                    <Box
+                      sx={{
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      Gallery
+                    </Box>
+                  }
+                  aria-label="Gallery"
                   {...a11yProps(2)}
+                  sx={{
+                    "& .MuiTab-iconWrapper": {
+                      marginRight: { xs: 0, sm: 1 },
+                    },
+                  }}
                 />
               </Tabs>
             </Box>
 
             {/* Tab Panel 1: Personal Information */}
             <TabPanel value={tabValue} index={0}>
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, sm: 3 } }}>
                 {/* Contact Information */}
                 <Typography
                   variant="h6"
@@ -588,7 +642,7 @@ const UserProfile = () => {
 
             {/* Tab Panel 2: User Todos */}
             <TabPanel value={tabValue} index={1}>
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, sm: 3 } }}>
                 <Typography
                   variant="h6"
                   component="h3"
@@ -711,7 +765,7 @@ const UserProfile = () => {
 
             {/* Tab Panel 3: Photo Gallery */}
             <TabPanel value={tabValue} index={2}>
-              <Box sx={{ p: 3 }}>
+              <Box sx={{ p: { xs: 2, sm: 3 } }}>
                 <PhotoGallery userId={activeUser.id} />
               </Box>
             </TabPanel>
